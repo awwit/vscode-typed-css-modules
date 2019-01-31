@@ -1,5 +1,7 @@
 # CSS Module Typed
 
+![logo](./logo.png)
+
 Creates .d.ts files from css-modules .css/.less/.scss files
 
 ## Install

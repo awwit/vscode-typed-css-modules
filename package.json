@@ -41,5 +41,6 @@
   },
   "dependencies": {
   },
-  "publisher": "dangxuan"
+  "publisher": "dangxuandev",
+  "icon": "icon.png"
 }
