@@ -2,6 +2,21 @@
 
 Creates .d.ts files from css-modules .css/.less/.scss files
 
+## Install
+
+Install deps first:
+
+```shell
+# require
+npm install -g typed-css-modules
+
+# if you need less
+npm install -g less
+
+# if you need scss
+npm install -g node-sass
+```
+
 ## Usage
 
 put

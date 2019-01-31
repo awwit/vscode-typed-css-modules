@@ -13,6 +13,9 @@
     "onCommand:extension.cssModuleTyped",
     "*"
   ],
+  "repository": {
+    "url": "https://github.com/xuandang/vscode-typed-css-modules"
+  },
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -34,13 +37,9 @@
     "vscode": "^1.1.25",
     "tslint": "^5.8.0",
     "@types/node": "^8.10.25",
-    "@types/mocha": "^2.2.42",
-    "less": "^3.9.0",
-    "node-sass": "^4.11.0",
-    "typed-css-modules": "^0.3.7"
+    "@types/mocha": "^2.2.42"
   },
   "dependencies": {
-
   },
   "publisher": "dangxuan"
 }

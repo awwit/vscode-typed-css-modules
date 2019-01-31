@@ -3,27 +3,44 @@
 import * as vscode from 'vscode';
 
 // @ts-ignore
-import * as less from 'less';
-// @ts-ignore
-import * as sass from 'node-sass';
-
-// @ts-ignore
-import * as DtsCreator from 'typed-css-modules';
 import * as fs from 'fs';
+// @ts-ignore
 
+function requireg(packageName) {
+  var childProcess = require('child_process');
+  var path = require('path');
+  var fs = require('fs');
 
-let creator = new DtsCreator();
+  var globalNodeModules = childProcess.execSync('npm root -g').toString().trim();
+  var packageDir = path.join(globalNodeModules, packageName);
+  if (!fs.existsSync(packageDir)) {
+    packageDir = path.join(globalNodeModules, 'npm/node_modules', packageName);
+  } //find package required by old npm
+
+  if (!fs.existsSync(packageDir)) {
+    throw new Error('vscode-typed-css-modules: Cannot find global module \'' + packageName + '\'');
+  }
+
+  var packageMeta = JSON.parse(fs.readFileSync(path.join(packageDir, 'package.json')).toString());
+  var main = path.join(packageDir, packageMeta.main);
+
+  return require(main);
+}
 
 async function renderLess(code: string) {
+  const less = requireg('less');
   const output = await less.render(code);
   return output.css;
 }
 
 async function renderScss(code: string) {
+  const sass = requireg('sass');
   return sass.renderSync(code);
 }
 
 async function renderTypedFile(css: string) {
+  const DtsCreator = requireg('typed-css-modules');
+  let creator = new DtsCreator();
   const content = await creator.create('', css);
   const typedCode = content.formatted;
   return typedCode as string;
@@ -36,6 +53,7 @@ async function writeFile(path: string, content: string) {
 }
 
 async function processDocument(document: vscode.TextDocument, force: boolean = false) {
+  try {
     const splitArray = document.fileName.split('.');
     const extname = splitArray.pop();
     
@@ -84,6 +102,10 @@ async function processDocument(document: vscode.TextDocument, force: boolean = f
     if (cssCode) {
       await typedCss(cssCode);
     }
+  } catch (e) {
+    vscode.window.showWarningMessage(e.toString());
+  }
+   
 }
 
 
