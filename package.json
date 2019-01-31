@@ -1,0 +1,46 @@
+{
+  "name": "typed-css-modules-plugin",
+  "displayName": "CSS Module Typed",
+  "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.30.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.cssModuleTyped",
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.cssModuleTyped",
+        "title": "CSS Module Typed: Generate .d.ts For CSS Module"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "typescript": "^3.1.4",
+    "vscode": "^1.1.25",
+    "tslint": "^5.8.0",
+    "@types/node": "^8.10.25",
+    "@types/mocha": "^2.2.42",
+    "less": "^3.9.0",
+    "node-sass": "^4.11.0",
+    "typed-css-modules": "^0.3.7"
+  },
+  "dependencies": {
+
+  },
+  "publisher": "dangxuan"
+}
