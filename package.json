@@ -2,7 +2,7 @@
   "name": "typed-css-modules-plugin",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.30.0"
   },
@@ -42,5 +42,5 @@
   "dependencies": {
   },
   "publisher": "dangxuandev",
-  "icon": "icon.png"
+  "icon": "logo.png"
 }
