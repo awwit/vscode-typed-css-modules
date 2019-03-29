@@ -78,11 +78,10 @@ async function processDocument(document: vscode.TextDocument, force: boolean = f
       return;
     }
     
-    const fullUri = document.uri.path;
 
     async function typedCss(cssCode: string) {
       const typedCode = await renderTypedFile(cssCode);
-      const outputPath = fullUri.replace(new RegExp(extname + '$'), extname + '.d.ts');
+      const outputPath = document.uri.fsPath + '.d.ts';
       await writeFile(outputPath, typedCode);
       if (force) {
         vscode.window.showInformationMessage('Write typed to:' + outputPath);
