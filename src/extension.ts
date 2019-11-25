@@ -1,130 +1,208 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from 'vscode'
+import * as fs from 'fs'
 
-// @ts-ignore
-import * as fs from 'fs';
-// @ts-ignore
+function resolveModule(packageName: string): string {
+  try {
+    return require.resolve(packageName)
+  } catch (err) {
+    return ''
+  }
+}
 
-function requireg(packageName) {
-  var childProcess = require('child_process');
-  var path = require('path');
-  var fs = require('fs');
+function requireg<T>(packageName: string): T {
+  // Find in local node_modules
+  let packageDir = resolveModule(packageName)
 
-  var globalNodeModules = childProcess.execSync('npm root -g').toString().trim();
-  var packageDir = path.join(globalNodeModules, packageName);
-  if (!fs.existsSync(packageDir)) {
-    packageDir = path.join(globalNodeModules, 'npm/node_modules', packageName);
-  } //find package required by old npm
+  // Find in global node_modules
+  if (!packageDir) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const requireg = require('requireg')
 
-  if (!fs.existsSync(packageDir)) {
-    throw new Error('vscode-typed-css-modules: Cannot find global module \'' + packageName + '\'');
+    try {
+      packageDir = requireg.resolve(packageName)
+    } catch (err) {
+      if (!fs.existsSync(packageDir)) {
+        throw new Error(
+          `vscode-typed-css-modules: Cannot find global module '${packageName}'`
+        )
+      }
+    }
   }
 
-  var packageMeta = JSON.parse(fs.readFileSync(path.join(packageDir, 'package.json')).toString());
-  var main = path.join(packageDir, packageMeta.main);
-
-  return require(main);
+  return require(packageDir)
 }
 
-async function renderLess(code: string) {
-  const less = requireg('less');
-  const output = await less.render(code);
-  return output.css;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let less: any
+
+async function renderLess(code: string): Promise<string> {
+  if (less === undefined) {
+    less = requireg('less')
+  }
+
+  const output = await less.render(code)
+
+  return output.css
 }
 
-async function renderScss(code: string) {
-  const sass = requireg('sass');
-  return sass.renderSync(code);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sass: any
+
+function renderScss(code: string): string {
+  if (sass === undefined) {
+    sass = requireg('sass')
+  }
+
+  // @see https://github.com/sass/dart-sass#javascript-api
+  return sass.renderSync(code)
 }
 
-async function renderTypedFile(css: string) {
-  const DtsCreator = requireg('typed-css-modules');
-  let creator = DtsCreator.hasOwnProperty('default') ? new DtsCreator.default() : new DtsCreator();
-  const content = await creator.create('', css);
-  const typedCode = content.formatted;
-  return typedCode as string;
+type DtsCreator = import('typed-css-modules').default
+
+let dtsCreator: DtsCreator | undefined
+
+async function renderTypedFile(css: string): Promise<string> {
+  if (dtsCreator === undefined) {
+    const DtsCreator = requireg<typeof import('typed-css-modules')>(
+      'typed-css-modules'
+    )
+
+    const Factory: {
+      new (): DtsCreator
+    } = Object.prototype.hasOwnProperty.call(DtsCreator, 'default')
+      ? DtsCreator.default
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (DtsCreator as any)
+
+    dtsCreator = new Factory()
+  }
+
+  const content = await dtsCreator.create('', css)
+
+  return content.formatted
 }
 
-async function writeFile(path: string, content: string) {
-  return new Promise(r => {
-    fs.writeFile(path, content, 'utf-8', r);
-  });
+async function writeFile(path: string, content: string): Promise<void> {
+  return new Promise(function executor(resolve, reject) {
+    fs.writeFile(path, content, 'utf-8', function result(err) {
+      if (err) reject(err)
+      resolve()
+    })
+  })
 }
 
-async function processDocument(document: vscode.TextDocument, force: boolean = false) {
+async function typedCss(
+  cssCode: string,
+  document: vscode.TextDocument,
+  force: boolean
+): Promise<void> {
+  const outputPath = document.uri.fsPath + '.d.ts'
+
+  const typedCode = await renderTypedFile(cssCode)
+
+  await writeFile(outputPath, typedCode)
+
+  if (force) {
+    vscode.window.showInformationMessage('Write typed to:' + outputPath)
+  }
+}
+
+function getExtFromPath(fileName: string): string {
+  const pos = fileName.lastIndexOf('.')
+
+  if (pos === -1) {
+    return ''
+  }
+
+  return fileName.slice(pos + 1)
+}
+
+async function getCssContent(extname: string, source: string): Promise<string> {
+  switch (extname) {
+    case 'css':
+      return source
+
+    case 'less':
+      return renderLess(source)
+
+    case 'scss':
+      return renderScss(source)
+
+    default:
+      return ''
+  }
+}
+
+const supportCss = ['less', 'css', 'scss']
+
+const TYPE_REGEX = /[\s//*]*@type/
+
+async function processDocument(
+  document: vscode.TextDocument,
+  force = false
+): Promise<void> {
   try {
-    const splitArray = document.fileName.split('.');
-    const extname = splitArray.pop();
-    
-    if (!extname) {
-      return;
+    const extname = getExtFromPath(document.fileName)
+
+    if (extname === '') {
+      return
     }
-    if (['less', 'css', 'scss'].indexOf(extname) === -1) {
+
+    if (!supportCss.includes(extname)) {
       if (force) {
-        vscode.window.showInformationMessage('Typed CSS Modules only support .less/.css/.scss');
+        vscode.window.showInformationMessage(
+          'Typed CSS Modules only support .less/.css/.scss'
+        )
       }
-      return;
+
+      return
     }
 
-    const content = document.getText();
+    const content = document.getText()
 
-    const TYPE_REGEX = /[\s\/\/\*]*@type/;
-
-    if (!TYPE_REGEX.test(content)) { 
+    if (!TYPE_REGEX.test(content)) {
       if (force) {
-        vscode.window.showInformationMessage('Typed CSS Modules require `// @type` or `/* @type */` ahead of file');
+        vscode.window.showInformationMessage(
+          'Typed CSS Modules require `// @type` or `/* @type */` ahead of file'
+        )
       }
-      return;
-    }
-    
 
-    async function typedCss(cssCode: string) {
-      const typedCode = await renderTypedFile(cssCode);
-      const outputPath = document.uri.fsPath + '.d.ts';
-      await writeFile(outputPath, typedCode);
-      if (force) {
-        vscode.window.showInformationMessage('Write typed to:' + outputPath);
-      }
+      return
     }
 
-    let cssCode;
-
-    if (extname === 'less') {
-      cssCode = await renderLess(content);
-    } else if (extname === 'css') {
-      cssCode = content;
-    } else if (extname === 'scss') {
-      cssCode = renderScss(content);
-    }
+    const cssCode = await getCssContent(extname, content)
 
     if (cssCode) {
-      await typedCss(cssCode);
+      await typedCss(cssCode, document, force)
     }
   } catch (e) {
-    vscode.window.showWarningMessage(e.toString());
+    vscode.window.showWarningMessage(e.toString())
   }
-   
 }
-
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
+  vscode.workspace.onDidSaveTextDocument(function onDidSaveTextDocument(
+    document: vscode.TextDocument
+  ) {
+    processDocument(document)
+  })
 
-  vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
-    processDocument(document);
-  });
+  const disposable = vscode.commands.registerCommand(
+    'extension.cssModuleTyped',
+    function command() {
+      if (vscode.window.activeTextEditor) {
+        const document = vscode.window.activeTextEditor.document
+        processDocument(document, true)
+      }
+    }
+  )
 
-	let disposable = vscode.commands.registerCommand('extension.cssModuleTyped', () => {
-		if (vscode.window.activeTextEditor) {
-			const document = vscode.window.activeTextEditor.document;
-			processDocument(document, true);
-		}
-  });
-
-	context.subscriptions.push(disposable);
+  context.subscriptions.push(disposable)
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(): void {
+  // deactivate
+}

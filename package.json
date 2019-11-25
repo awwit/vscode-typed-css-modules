@@ -1,8 +1,14 @@
 {
   "name": "typed-css-modules-plugin",
+  "icon": "logo.png",
+  "version": "0.0.5",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
-  "version": "0.0.5",
+  "author": "xcodebuild <me@xcodebuild.com>",
+  "contributors": [
+    "Ignat Awwit <ignatius.awwit@gmail.com>"
+  ],
+  "publisher": "awwit",
   "engines": {
     "vscode": "^1.30.0"
   },
@@ -14,7 +20,7 @@
     "*"
   ],
   "repository": {
-    "url": "https://github.com/xuandang/vscode-typed-css-modules"
+    "url": "https://github.com/awwit/vscode-typed-css-modules"
   },
   "main": "./out/extension.js",
   "contributes": {
@@ -32,15 +38,25 @@
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
-  "devDependencies": {
-    "typescript": "^3.1.4",
-    "vscode": "^1.1.25",
-    "tslint": "^5.8.0",
-    "@types/node": "^8.10.25",
-    "@types/mocha": "^2.2.42"
-  },
   "dependencies": {
+    "requireg": "^0.2.2"
   },
-  "publisher": "dangxuandev",
-  "icon": "logo.png"
+  "devDependencies": {
+    "@types/mocha": "5.2.7",
+    "@types/node": "12.12.12",
+    "@typescript-eslint/eslint-plugin": "2.8.0",
+    "@typescript-eslint/parser": "2.8.0",
+    "eslint": "6.7.1",
+    "eslint-config-prettier": "6.7.0",
+    "eslint-config-standard": "14.1.0",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-node": "10.0.0",
+    "eslint-plugin-prettier": "3.1.1",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-standard": "4.0.1",
+    "prettier": "1.19.1",
+    "typed-css-modules": "0.6.3",
+    "typescript": "3.7.2",
+    "vscode": "1.1.36"
+  }
 }
