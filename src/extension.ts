@@ -31,27 +31,17 @@ function requireg<T>(packageName: string): T {
     packageDir = path.join(globalNodeModules, packageName)
 
     if (!fs.existsSync(packageDir)) {
-      packageDir = path.join(globalNodeModules, 'npm/node_modules', packageName)
-    } // find package required by old npm
-
-    if (!fs.existsSync(packageDir)) {
       throw new Error(
         `vscode-typed-css-modules: Cannot find global module '${packageName}'`
       )
     }
   }
 
-  const packageMeta = JSON.parse(
-    fs.readFileSync(path.join(packageDir, 'package.json')).toString()
-  )
-
-  const main = path.join(packageDir, packageMeta.main)
-
-  return require(main)
+  return require(packageDir)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let less: any
+let less: any = null
 
 async function renderLess(code: string): Promise<string> {
   if (less === undefined) {
@@ -64,7 +54,7 @@ async function renderLess(code: string): Promise<string> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sass: any
+let sass: any = null
 
 function renderScss(code: string): string {
   if (sass === undefined) {
@@ -77,10 +67,10 @@ function renderScss(code: string): string {
 
 type DtsCreator = import('typed-css-modules').default
 
-let dtsCreator: DtsCreator | undefined
+let dtsCreator: DtsCreator | null = null
 
 async function renderTypedFile(css: string): Promise<string> {
-  if (dtsCreator === undefined) {
+  if (dtsCreator === null) {
     const DtsCreator = requireg<typeof import('typed-css-modules')>(
       'typed-css-modules'
     )
@@ -151,7 +141,7 @@ async function getCssContent(extname: string, source: string): Promise<string> {
   }
 }
 
-const supportCss = ['less', 'css', 'scss']
+const supportCss = ['css', 'less', 'scss']
 
 const TYPE_REGEX = /[\s//*]*@type/
 
@@ -222,5 +212,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 // this method is called when your extension is deactivated
 export function deactivate(): void {
-  // deactivate
+  dtsCreator = null
+  less = null
+  sass = null
 }
