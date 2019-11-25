@@ -1,35 +1,53 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
 import * as fs from 'fs'
 
-function resolveModule(packageName: string): string {
+function resolveLocal(packageName: string): string {
   try {
-    return require.resolve(packageName)
+    return require.resolve(packageName, {
+      paths: [vscode.workspace.rootPath || ''],
+    })
   } catch (err) {
     return ''
   }
 }
 
 function requireg<T>(packageName: string): T {
-  // Find in local node_modules
-  let packageDir = resolveModule(packageName)
+  let packageDir = resolveLocal(packageName)
 
-  // Find in global node_modules
   if (!packageDir) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const requireg = require('requireg')
+    const childProcess = require('child_process')
 
-    try {
-      packageDir = requireg.resolve(packageName)
-    } catch (err) {
-      if (!fs.existsSync(packageDir)) {
-        throw new Error(
-          `vscode-typed-css-modules: Cannot find global module '${packageName}'`
-        )
-      }
+    const isYarn =
+      vscode.workspace.getConfiguration('npm').get<string>('packageManager') ===
+      'yarn'
+
+    const globalNodeModules = childProcess
+      .execSync(isYarn ? 'yarn global dir' : 'npm root -g')
+      .toString()
+      .trim()
+
+    packageDir = path.join(globalNodeModules, packageName)
+
+    if (!fs.existsSync(packageDir)) {
+      packageDir = path.join(globalNodeModules, 'npm/node_modules', packageName)
+    } // find package required by old npm
+
+    if (!fs.existsSync(packageDir)) {
+      throw new Error(
+        `vscode-typed-css-modules: Cannot find global module '${packageName}'`
+      )
     }
   }
 
-  return require(packageDir)
+  const packageMeta = JSON.parse(
+    fs.readFileSync(path.join(packageDir, 'package.json')).toString()
+  )
+
+  const main = path.join(packageDir, packageMeta.main)
+
+  return require(main)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
