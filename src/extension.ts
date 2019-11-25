@@ -40,7 +40,7 @@ async function renderScss(code: string) {
 
 async function renderTypedFile(css: string) {
   const DtsCreator = requireg('typed-css-modules');
-  let creator = new DtsCreator();
+  let creator = DtsCreator.hasOwnProperty('default') ? new DtsCreator.default() : new DtsCreator();
   const content = await creator.create('', css);
   const typedCode = content.formatted;
   return typedCode as string;
