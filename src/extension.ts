@@ -3,13 +3,53 @@ import * as path from 'path'
 import * as fs from 'fs'
 
 function resolveLocal(packageName: string): string {
-  try {
-    return require.resolve(packageName, {
-      paths: [vscode.workspace.rootPath || ''],
-    })
-  } catch (err) {
+  // Get open workspaces
+  const folders =
+    vscode.workspace.workspaceFolders !== undefined
+      ? vscode.workspace.workspaceFolders.map(function mapper(folder) {
+          return folder.uri.fsPath
+        })
+      : []
+
+  // Get path of current file
+  let current =
+    vscode.window.activeTextEditor !== undefined
+      ? path.dirname(vscode.window.activeTextEditor.document.fileName)
+      : ''
+
+  if (current === '') {
     return ''
   }
+
+  // Find the workspace to which the file belongs
+  const root = folders.find(function find(folder) {
+    return current.startsWith(folder)
+  })
+
+  // If not found
+  if (root === undefined) {
+    return ''
+  }
+
+  // If found, then search the module
+  // starting from the current directory
+  while (current !== root) {
+    const dir = current + '/node_modules/' + packageName
+
+    if (fs.existsSync(dir)) {
+      return dir
+    }
+
+    current = path.resolve(current + '/..')
+  }
+
+  const dir = current + '/node_modules/' + packageName
+
+  if (fs.existsSync(dir)) {
+    return dir
+  }
+
+  return ''
 }
 
 function requireg<T>(packageName: string): T {
@@ -58,7 +98,7 @@ let sass: any = null
 
 function renderScss(code: string): string {
   if (sass === undefined) {
-    sass = requireg('sass')
+    sass = requireg('node-sass')
   }
 
   // @see https://github.com/sass/dart-sass#javascript-api
@@ -111,7 +151,7 @@ async function typedCss(
   await writeFile(outputPath, typedCode)
 
   if (force) {
-    vscode.window.showInformationMessage('Write typed to:' + outputPath)
+    vscode.window.showInformationMessage('Write typed to: ' + outputPath)
   }
 }
 
@@ -200,7 +240,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const disposable = vscode.commands.registerCommand(
     'extension.cssModuleTyped',
     function command() {
-      if (vscode.window.activeTextEditor) {
+      if (vscode.window.activeTextEditor !== undefined) {
         const document = vscode.window.activeTextEditor.document
         processDocument(document, true)
       }

@@ -10,31 +10,34 @@ Install deps first:
 
 ```shell
 # require
-npm install -g typed-css-modules
+npm install typed-css-modules
 
 # if you need less
-npm install -g less
+npm install less
 
 # if you need scss
-npm install -g node-sass
+npm install node-sass
 ```
+
+Modules can be installed globally. `yarn` is supported.
+
+To switch the package manager (`npm` or `yarn`), you need to change the settings `npm.packageManager` of the built-in module `vscode.npm`.
 
 ## Usage
 
 put
 
-```
+```js
 // @type
 ```
 
-or 
+or
 
-```
+```css
 /* @type */
 ```
 
 ahead of your `.css/.less/.scss` file, and save, you will get a `d.ts` file in same directory.
-
 
 ## preview
 
