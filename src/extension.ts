@@ -2,57 +2,12 @@ import * as vscode from 'vscode'
 import * as path from 'path'
 import * as fs from 'fs'
 
-function resolveLocal(packageName: string): string {
-  // Get open workspaces
-  const folders =
-    vscode.workspace.workspaceFolders !== undefined
-      ? vscode.workspace.workspaceFolders.map(function mapper(folder) {
-          return folder.uri.fsPath
-        })
-      : []
+import { resolveLocal, getWorkspacePath, isFileEqualBuffer } from './utils'
 
-  // Get path of current file
-  let current =
-    vscode.window.activeTextEditor !== undefined
-      ? path.dirname(vscode.window.activeTextEditor.document.fileName)
-      : ''
+function requireg<T>(packageName: string): T
+function requireg<T>(packageName: string, required: false): T | null
 
-  if (current === '') {
-    return ''
-  }
-
-  // Find the workspace to which the file belongs
-  const root = folders.find(function find(folder) {
-    return current.startsWith(folder)
-  })
-
-  // If not found
-  if (root === undefined) {
-    return ''
-  }
-
-  // If found, then search the module
-  // starting from the current directory
-  while (current !== root) {
-    const dir = current + '/node_modules/' + packageName
-
-    if (fs.existsSync(dir)) {
-      return dir
-    }
-
-    current = path.resolve(current + '/..')
-  }
-
-  const dir = current + '/node_modules/' + packageName
-
-  if (fs.existsSync(dir)) {
-    return dir
-  }
-
-  return ''
-}
-
-function requireg<T>(packageName: string): T {
+function requireg<T>(packageName: string, required = true): T | null {
   let packageDir = resolveLocal(packageName)
 
   if (!packageDir) {
@@ -71,9 +26,13 @@ function requireg<T>(packageName: string): T {
     packageDir = path.join(globalNodeModules, packageName)
 
     if (!fs.existsSync(packageDir)) {
-      throw new Error(
-        `vscode-typed-css-modules: Cannot find global module '${packageName}'`
-      )
+      if (required) {
+        throw new Error(
+          `vscode-typed-css-modules: Cannot find global module '${packageName}'`
+        )
+      } else {
+        return null
+      }
     }
   }
 
@@ -109,7 +68,16 @@ type DtsCreator = import('typed-css-modules').default
 
 let dtsCreator: DtsCreator | null = null
 
-async function renderTypedFile(css: string): Promise<string> {
+type Eslint = typeof import('eslint')
+
+/**
+ * Search once
+ */
+let eslintSearch = false
+
+let eslintEngine: import('eslint').CLIEngine | null = null
+
+function renderTypedFile(css: string, path: string): Promise<Buffer> {
   if (dtsCreator === null) {
     const DtsCreator = requireg<typeof import('typed-css-modules')>(
       'typed-css-modules'
@@ -125,17 +93,40 @@ async function renderTypedFile(css: string): Promise<string> {
     dtsCreator = new Factory()
   }
 
-  const content = await dtsCreator.create('', css)
+  if (!eslintSearch && eslintEngine === null) {
+    const eslint = requireg<Eslint>('eslint', false)
 
-  return content.formatted
+    eslintSearch = true
+
+    if (eslint !== null) {
+      eslintEngine = new eslint.CLIEngine({
+        cwd: getWorkspacePath(path),
+        extensions: ['.ts'],
+        fix: true,
+      })
+    }
+  }
+
+  return dtsCreator.create('', css).then(function({ formatted }) {
+    if (eslintEngine !== null) {
+      const report = eslintEngine.executeOnText(formatted, path)
+
+      return Buffer.from(report.results[0].output || formatted, 'utf-8')
+    }
+
+    return Buffer.from(formatted, 'utf-8')
+  })
 }
 
-async function writeFile(path: string, content: string): Promise<void> {
-  return new Promise(function executor(resolve, reject) {
-    fs.writeFile(path, content, 'utf-8', function result(err) {
-      if (err) reject(err)
-      resolve()
-    })
+function writeFile(path: string, buffer: Buffer): Promise<void> {
+  return isFileEqualBuffer(path, buffer).then(function isEqual(isEqual) {
+    return !isEqual
+      ? new Promise(function executor(resolve, reject) {
+          fs.writeFile(path, buffer, { flag: 'w' }, function result(err) {
+            err ? reject(err) : resolve()
+          })
+        })
+      : undefined
   })
 }
 
@@ -146,7 +137,7 @@ async function typedCss(
 ): Promise<void> {
   const outputPath = document.uri.fsPath + '.d.ts'
 
-  const typedCode = await renderTypedFile(cssCode)
+  const typedCode = await renderTypedFile(cssCode, outputPath)
 
   await writeFile(outputPath, typedCode)
 
@@ -252,6 +243,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 // this method is called when your extension is deactivated
 export function deactivate(): void {
+  eslintSearch = false
+  eslintEngine = null
   dtsCreator = null
   less = null
   sass = null
