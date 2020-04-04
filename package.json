@@ -1,7 +1,7 @@
 {
   "name": "typed-css-modules-plugin",
   "icon": "logo.png",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
@@ -34,7 +34,7 @@
   },
   "scripts": {
     "vscode:prepublish": "yarn compile",
-    "publish": "vsce publish",
+    "pub": "vsce publish",
     "package": "vsce package",
     "compile": "npx tsc",
     "tc": "npx tsc --noEmit",
