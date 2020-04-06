@@ -2,40 +2,66 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as vscode from 'vscode'
 
+function getFileSize(filePath: string): Promise<number> {
+  return new Promise(function executor(resolve, reject) {
+    fs.stat(filePath, function stat(err, stats) {
+      if (err !== null) {
+        if (err.code === 'ENOENT') {
+          return resolve(-1)
+        }
+
+        return reject(err)
+      }
+
+      resolve(stats.size)
+    })
+  })
+}
+
 export function isFileEqualBuffer(
   filePath: string,
   buffer: Buffer
 ): Promise<boolean> {
-  return new Promise(function executor(resolve, reject) {
-    const stream = fs.createReadStream(filePath)
+  return getFileSize(filePath).then(function fileSize(size) {
+    if (buffer.length !== size) {
+      return false
+    }
 
-    let offset = 0
-    let isEqual = true
+    return new Promise(function executor(resolve, reject) {
+      const stream = fs.createReadStream(filePath)
 
-    stream.on('data', function read(data) {
-      if (!Buffer.isBuffer(data)) {
-        data = Buffer.from(data)
-      }
+      let offset = 0
+      let isEqual = true
 
-      if (!data.equals(buffer.slice(offset, offset + data.length))) {
-        isEqual = false
-        stream.close()
-      } else {
-        offset += data.length
-      }
-    })
+      stream.on('data', function read(data) {
+        if (!Buffer.isBuffer(data)) {
+          data = Buffer.from(data)
+        }
 
-    stream.on('error', function error(err: NodeJS.ErrnoException) {
-      if (err.code === 'ENOENT') {
-        isEqual = false
-        resolve(isEqual)
-      } else {
-        reject(err)
-      }
-    })
+        if (
+          buffer.length >= offset + data.length &&
+          buffer.compare(data, 0, data.length, offset, offset + data.length) ===
+            0
+        ) {
+          offset += data.length
+        } else {
+          isEqual = false
+          stream.close()
+        }
+      })
 
-    stream.on('close', function close() {
-      resolve(offset === 0 && buffer.length > 0 ? false : isEqual)
+      stream.on('error', function error(err: NodeJS.ErrnoException) {
+        if (err.code === 'ENOENT') {
+          isEqual = false
+          resolve(isEqual)
+        } else {
+          reject(err)
+        }
+      })
+
+      stream.on('close', function close() {
+        resolve(offset === 0 && buffer.length > 0 ? false : isEqual)
+      })
     })
   })
 }

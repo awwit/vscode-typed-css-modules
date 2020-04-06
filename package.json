@@ -57,7 +57,7 @@
     "eslint-plugin-prettier": "3.1.2",
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
-    "prettier": "2.0.2",
+    "prettier": "2.0.4",
     "typed-css-modules": "0.6.3",
     "typescript": "3.8.3",
     "vscode": "1.1.36"
