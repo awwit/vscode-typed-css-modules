@@ -4,6 +4,20 @@ import * as fs from 'fs'
 
 import { resolveLocal, getWorkspacePath, isFileEqualBuffer } from './utils'
 
+function getGlobalNodeModules(): string {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const childProcess: typeof import('child_process') = require('child_process')
+
+  const isYarn =
+    vscode.workspace.getConfiguration('npm').get<string>('packageManager') ===
+    'yarn'
+
+  return childProcess
+    .execSync(isYarn ? 'yarn global dir' : 'npm root -g')
+    .toString()
+    .trim()
+}
+
 function requireg<T>(packageName: string): T
 function requireg<T>(packageName: string, required: false): T | null
 
@@ -11,17 +25,7 @@ function requireg<T>(packageName: string, required = true): T | null {
   let packageDir = resolveLocal(packageName)
 
   if (!packageDir) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const childProcess = require('child_process')
-
-    const isYarn =
-      vscode.workspace.getConfiguration('npm').get<string>('packageManager') ===
-      'yarn'
-
-    const globalNodeModules = childProcess
-      .execSync(isYarn ? 'yarn global dir' : 'npm root -g')
-      .toString()
-      .trim()
+    const globalNodeModules = getGlobalNodeModules()
 
     packageDir = path.join(globalNodeModules, packageName)
 
@@ -99,15 +103,17 @@ function renderTypedFile(css: string, path: string): Promise<Buffer> {
     eslintSearch = true
 
     if (eslint !== null) {
-      eslintEngine = new eslint.CLIEngine({
-        cwd: getWorkspacePath(path),
-        extensions: ['.ts'],
-        fix: true,
-      })
+      try {
+        eslintEngine = new eslint.CLIEngine({
+          cwd: getWorkspacePath(path),
+          extensions: ['.ts'],
+          fix: true,
+        })
+      } catch {}
     }
   }
 
-  return dtsCreator.create('', css).then(function({ formatted }) {
+  return dtsCreator.create('', css).then(function ({ formatted }) {
     if (eslintEngine !== null) {
       const report = eslintEngine.executeOnText(formatted, path)
 
