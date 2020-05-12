@@ -1,7 +1,7 @@
 {
   "name": "typed-css-modules-plugin",
   "icon": "logo.png",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "license": "MIT",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
