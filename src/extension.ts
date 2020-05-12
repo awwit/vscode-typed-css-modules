@@ -1,8 +1,11 @@
+// eslint-disable-next-line node/no-unpublished-import
 import * as vscode from 'vscode'
 import * as path from 'path'
 import * as fs from 'fs'
 
-import { resolveLocal, getWorkspacePath, isFileEqualBuffer } from './utils'
+import { isFileEqualBuffer } from 'is-file-equal-buffer'
+
+import { resolveLocal, getWorkspacePath } from './utils'
 
 function getGlobalNodeModules(): string {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -81,7 +84,7 @@ let eslintSearch = false
 
 let eslintEngine: import('eslint').CLIEngine | null = null
 
-function renderTypedFile(css: string, path: string): Promise<Buffer> {
+function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
   if (dtsCreator === null) {
     const DtsCreator = requireg<typeof import('typed-css-modules')>(
       'typed-css-modules'
@@ -103,10 +106,21 @@ function renderTypedFile(css: string, path: string): Promise<Buffer> {
     eslintSearch = true
 
     if (eslint !== null) {
+      const workspace = getWorkspacePath(filePath)
+
+      let configFile = vscode.workspace
+        .getConfiguration('eslint.options')
+        .get<string>('configFile')
+
+      if (configFile !== undefined && !path.isAbsolute(configFile)) {
+        configFile = path.resolve(workspace, configFile)
+      }
+
       try {
         eslintEngine = new eslint.CLIEngine({
-          cwd: getWorkspacePath(path),
+          cwd: workspace,
           extensions: ['.ts'],
+          configFile,
           fix: true,
         })
       } catch {}
@@ -115,7 +129,7 @@ function renderTypedFile(css: string, path: string): Promise<Buffer> {
 
   return dtsCreator.create('', css).then(function ({ formatted }) {
     if (eslintEngine !== null) {
-      const report = eslintEngine.executeOnText(formatted, path)
+      const report = eslintEngine.executeOnText(formatted, filePath)
 
       return Buffer.from(report.results[0].output || formatted, 'utf-8')
     }
@@ -228,13 +242,13 @@ async function processDocument(
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext): void {
-  vscode.workspace.onDidSaveTextDocument(function onDidSaveTextDocument(
-    document: vscode.TextDocument
-  ) {
-    processDocument(document)
-  })
+  const didSave = vscode.workspace.onDidSaveTextDocument(
+    function onDidSaveTextDocument(document: vscode.TextDocument) {
+      processDocument(document)
+    }
+  )
 
-  const disposable = vscode.commands.registerCommand(
+  const registerCommand = vscode.commands.registerCommand(
     'extension.cssModuleTyped',
     function command() {
       if (vscode.window.activeTextEditor !== undefined) {
@@ -244,7 +258,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   )
 
-  context.subscriptions.push(disposable)
+  context.subscriptions.push(didSave, registerCommand)
 }
 
 // this method is called when your extension is deactivated

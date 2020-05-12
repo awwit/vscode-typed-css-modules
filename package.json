@@ -36,30 +36,33 @@
     "vscode:prepublish": "yarn compile",
     "pub": "vsce publish",
     "package": "vsce package",
-    "compile": "npx tsc",
+    "compile": "npx rimraf ./out && npx tsc",
     "tc": "npx tsc --noEmit",
     "watch": "npx tsc -watch",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "yarn compile && node ./node_modules/vscode/bin/test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "is-file-equal-buffer": "1.0.2"
+  },
   "devDependencies": {
     "@types/eslint": "6.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "13.11.0",
-    "@typescript-eslint/eslint-plugin": "2.27.0",
-    "@typescript-eslint/parser": "2.27.0",
-    "eslint": "6.8.0",
-    "eslint-config-prettier": "6.10.1",
+    "@types/node": "13.13.5",
+    "@typescript-eslint/eslint-plugin": "2.32.0",
+    "@typescript-eslint/parser": "2.32.0",
+    "eslint": "7.0.0",
+    "eslint-config-prettier": "6.11.0",
     "eslint-config-standard": "14.1.1",
     "eslint-plugin-import": "2.20.2",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-prettier": "3.1.2",
+    "eslint-plugin-prettier": "3.1.3",
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
-    "prettier": "2.0.4",
+    "prettier": "2.0.5",
+    "rimraf": "3.0.2",
     "typed-css-modules": "0.6.3",
     "typescript": "3.8.3",
-    "vscode": "1.1.36"
+    "vscode": "1.1.37"
   }
 }
