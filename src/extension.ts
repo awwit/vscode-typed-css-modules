@@ -129,9 +129,11 @@ function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
 
   return dtsCreator.create('', css).then(function ({ formatted }) {
     if (eslintEngine !== null) {
-      const report = eslintEngine.executeOnText(formatted, filePath)
-
-      return Buffer.from(report.results[0].output || formatted, 'utf-8')
+      try {
+        const report = eslintEngine.executeOnText(formatted, filePath);
+        if(report.results[0])
+          formatted = report.results[0].output as string;
+      } catch(error) {}
     }
 
     return Buffer.from(formatted, 'utf-8')
