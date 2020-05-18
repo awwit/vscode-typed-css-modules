@@ -50,7 +50,7 @@ function requireg<T>(packageName: string, required = true): T | null {
 let less: any = null
 
 async function renderLess(code: string): Promise<string> {
-  if (less === undefined) {
+  if (less === null) {
     less = requireg('less')
   }
 
@@ -63,7 +63,7 @@ async function renderLess(code: string): Promise<string> {
 let sass: any = null
 
 function renderScss(code: string): string {
-  if (sass === undefined) {
+  if (sass === null) {
     sass = requireg('node-sass')
   }
 
