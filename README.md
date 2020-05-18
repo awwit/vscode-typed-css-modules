@@ -2,7 +2,7 @@
 
 ![logo](./logo.png)
 
-Creates .d.ts files from css-modules .css/.less/.scss files
+Creates .d.ts files from css-modules .css/.less/.scss/.styl files
 
 ## Install
 
@@ -17,6 +17,9 @@ npm install less
 
 # if you need scss
 npm install node-sass
+
+# if you need sylus
+npm install stylus
 ```
 
 Modules can be installed globally. `yarn` is supported.
@@ -37,7 +40,7 @@ or
 /* @type */
 ```
 
-ahead of your `.css/.less/.scss` file, and save, you will get a `d.ts` file in same directory.
+ahead of your `.css/.less/.scss/.styl` file, and save, you will get a `d.ts` file in same directory.
 
 ## preview
 
