@@ -1,13 +1,14 @@
 {
   "name": "typed-css-modules-plugin",
   "icon": "logo.png",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "license": "MIT",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
   "author": "xcodebuild <me@xcodebuild.com>",
   "contributors": [
-    "Ignat Awwit <ignatius.awwit@gmail.com>"
+    "Ignat Awwit <ignatius.awwit@gmail.com>",
+    "Daniel Clausmeyer <daniel@shwao.com>"
   ],
   "publisher": "awwit",
   "engines": {
