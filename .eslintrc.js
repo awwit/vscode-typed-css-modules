@@ -20,6 +20,7 @@ module.exports = {
   },
   env: {
     node: true,
+    mocha: true,
   },
   rules: {
     'node/no-missing-import': 'off',

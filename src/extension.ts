@@ -53,13 +53,13 @@ interface LessRenderOutput {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let less: any = null
 
-function renderLess(code: string): Promise<string> {
+function renderLess(content: string): Promise<string> {
   if (less === null) {
     less = requireg('less')
   }
 
   return less
-    .render(code)
+    .render(content)
     .then(function onfulfilled({ css }: LessRenderOutput) {
       return css
     })
@@ -68,25 +68,25 @@ function renderLess(code: string): Promise<string> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sass: any = null
 
-function renderScss(code: string): string {
+function renderScss(content: string): string {
   if (sass === null) {
     sass = requireg('node-sass')
   }
 
   // @see https://github.com/sass/dart-sass#javascript-api
-  return sass.renderSync(code)
+  return sass.renderSync(content)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let stylus: any = null
 
-function renderStylus(code: string, root: string): Promise<string> {
+function renderStylus(content: string, root: string): Promise<string> {
   if (stylus === null) {
     stylus = requireg('stylus')
   }
 
   return new Promise<string>(function executor(resolve, reject) {
-    stylus(code)
+    stylus(content)
       .set('paths', [root]) // This is needed for "@require" paths to be resolved.
       .render(function callback(err: Error, css: string) {
         err ? reject(err) : resolve(css)

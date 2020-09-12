@@ -4,7 +4,7 @@
   "version": "0.2.4",
   "license": "MIT",
   "displayName": "CSS Module Typed",
-  "description": "Creates .d.ts files from css-modules .css/.less/.scss files",
+  "description": "Creates .d.ts files from css-modules .css/.less/.scss/.styl files",
   "author": "xcodebuild <me@xcodebuild.com>",
   "contributors": [
     "Ignat Awwit <ignatius.awwit@gmail.com>",
@@ -24,7 +24,7 @@
   "repository": {
     "url": "https://github.com/awwit/vscode-typed-css-modules"
   },
-  "main": "./out/extension.js",
+  "main": "dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -33,21 +33,29 @@
       }
     ]
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn test"
+    }
+  },
   "scripts": {
     "vscode:prepublish": "yarn compile",
     "pub": "vsce publish",
     "package": "vsce package",
-    "compile": "npx rimraf ./out && npx tsc",
-    "tc": "npx tsc --noEmit",
-    "watch": "npx tsc -watch",
+    "precompile": "rimraf ./dist",
+    "compile": "tsc",
+    "tc": "tsc --noEmit",
+    "watch": "tsc -watch",
     "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "yarn compile && node ./node_modules/vscode/bin/test"
+    "pretest": "yarn compile",
+    "test": "node ./dist/test/runTests.js"
   },
   "dependencies": {
     "is-file-equal-buffer": "1.0.4"
   },
   "devDependencies": {
     "@types/eslint": "7.2.2",
+    "@types/glob": "7.1.3",
     "@types/mocha": "8.0.3",
     "@types/node": "14.10.1",
     "@typescript-eslint/eslint-plugin": "3.10.1",
@@ -60,10 +68,15 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
+    "husky": "4.3.0",
+    "less": "3.12.2",
+    "node-sass": "4.14.1",
     "prettier": "2.1.1",
     "rimraf": "3.0.2",
+    "stylus": "0.54.8",
     "typed-css-modules": "0.6.4",
     "typescript": "4.0.2",
-    "vscode": "1.1.37"
+    "vscode": "1.1.37",
+    "vscode-test": "1.4.0"
   }
 }

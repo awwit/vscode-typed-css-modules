@@ -18,7 +18,7 @@ npm install less
 # if you need scss
 npm install node-sass
 
-# if you need sylus
+# if you need stylus
 npm install stylus
 ```
 
