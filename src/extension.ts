@@ -50,7 +50,7 @@ function requireg<T>(packageName: string, required = true): T | null {
 let less: any = null
 
 async function renderLess(code: string): Promise<string> {
-  if (less === undefined) {
+  if (less === null) {
     less = requireg('less')
   }
 
@@ -63,12 +63,32 @@ async function renderLess(code: string): Promise<string> {
 let sass: any = null
 
 function renderScss(code: string): string {
-  if (sass === undefined) {
+  if (sass === null) {
     sass = requireg('node-sass')
   }
 
   // @see https://github.com/sass/dart-sass#javascript-api
   return sass.renderSync(code)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let stylus: any = null
+
+async function renderStylus(code: string, root: string): Promise<string> {
+  if (stylus === null) {
+    stylus = requireg('stylus')
+  }
+
+  return await new Promise(resolve => {
+    stylus(code)
+      .set('paths', [root]) // This is needed for "@require" paths to be resolved.
+      .render((err: Error, css: string) =>
+      {
+        if(err) throw err;
+
+        resolve(css);
+      });
+  });
 }
 
 type DtsCreator = import('typed-css-modules').default
@@ -129,9 +149,11 @@ function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
 
   return dtsCreator.create('', css).then(function ({ formatted }) {
     if (eslintEngine !== null) {
-      const report = eslintEngine.executeOnText(formatted, filePath)
-
-      return Buffer.from(report.results[0].output || formatted, 'utf-8')
+      try {
+        const report = eslintEngine.executeOnText(formatted, filePath);
+        if(report.results[0])
+          formatted = report.results[0].output as string;
+      } catch(error) {}
     }
 
     return Buffer.from(formatted, 'utf-8')
@@ -176,7 +198,7 @@ function getExtFromPath(fileName: string): string {
   return fileName.slice(pos + 1)
 }
 
-async function getCssContent(extname: string, source: string): Promise<string> {
+async function getCssContent(extname: string, source: string, root: string): Promise<string> {
   switch (extname) {
     case 'css':
       return source
@@ -187,12 +209,15 @@ async function getCssContent(extname: string, source: string): Promise<string> {
     case 'scss':
       return renderScss(source)
 
+    case 'styl':
+      return renderStylus(source, root)
+
     default:
       return ''
   }
 }
 
-const supportCss = ['css', 'less', 'scss']
+const supportCss = ['css', 'less', 'scss', 'styl']
 
 const TYPE_REGEX = /[\s//*]*@type/
 
@@ -210,7 +235,7 @@ async function processDocument(
     if (!supportCss.includes(extname)) {
       if (force) {
         vscode.window.showInformationMessage(
-          'Typed CSS Modules only support .less/.css/.scss'
+          'Typed CSS Modules only support .less/.css/.scss/.styl'
         )
       }
 
@@ -229,7 +254,7 @@ async function processDocument(
       return
     }
 
-    const cssCode = await getCssContent(extname, content)
+    const cssCode = await getCssContent(extname, content, path.dirname(document.fileName))
 
     if (cssCode) {
       await typedCss(cssCode, document, force)
