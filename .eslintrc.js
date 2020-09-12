@@ -24,6 +24,6 @@ module.exports = {
   rules: {
     'node/no-missing-import': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-empty': ['error', { 'allowEmptyCatch': true }],
+    'no-empty': ['error', { allowEmptyCatch: true }],
   },
 }

@@ -11,7 +11,7 @@ function getGlobalNodeModules(): string {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const childProcess: typeof import('child_process') = require('child_process')
 
-  const isYarn =
+  const isYarn: boolean =
     vscode.workspace.getConfiguration('npm').get<string>('packageManager') ===
     'yarn'
 
@@ -46,17 +46,23 @@ function requireg<T>(packageName: string, required = true): T | null {
   return require(packageDir)
 }
 
+interface LessRenderOutput {
+  css: string
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let less: any = null
 
-async function renderLess(code: string): Promise<string> {
+function renderLess(code: string): Promise<string> {
   if (less === null) {
     less = requireg('less')
   }
 
-  const output = await less.render(code)
-
-  return output.css
+  return less
+    .render(code)
+    .then(function onfulfilled({ css }: LessRenderOutput) {
+      return css
+    })
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,21 +80,18 @@ function renderScss(code: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let stylus: any = null
 
-async function renderStylus(code: string, root: string): Promise<string> {
+function renderStylus(code: string, root: string): Promise<string> {
   if (stylus === null) {
     stylus = requireg('stylus')
   }
 
-  return await new Promise(resolve => {
+  return new Promise<string>(function executor(resolve, reject) {
     stylus(code)
       .set('paths', [root]) // This is needed for "@require" paths to be resolved.
-      .render((err: Error, css: string) =>
-      {
-        if(err) throw err;
-
-        resolve(css);
-      });
-  });
+      .render(function callback(err: Error, css: string) {
+        err ? reject(err) : resolve(css)
+      })
+  })
 }
 
 type DtsCreator = import('typed-css-modules').default
@@ -102,7 +105,7 @@ type Eslint = typeof import('eslint')
  */
 let eslintSearch = false
 
-let eslintEngine: import('eslint').CLIEngine | null = null
+let eslintEngine: import('eslint').ESLint | null = null
 
 function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
   if (dtsCreator === null) {
@@ -137,34 +140,44 @@ function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
       }
 
       try {
-        eslintEngine = new eslint.CLIEngine({
+        eslintEngine = new eslint.ESLint({
           cwd: workspace,
           extensions: ['.ts'],
-          configFile,
+          overrideConfigFile: configFile,
           fix: true,
         })
       } catch {}
     }
   }
 
-  return dtsCreator.create('', css).then(function ({ formatted }) {
-    if (eslintEngine !== null) {
-      try {
-        const report = eslintEngine.executeOnText(formatted, filePath);
-        if(report.results[0])
-          formatted = report.results[0].output as string;
-      } catch(error) {}
-    }
+  return dtsCreator
+    .create('', css)
+    .then(function onfulfilled({ formatted }) {
+      if (eslintEngine !== null) {
+        // eslint-disable-next-line promise/no-nesting
+        return eslintEngine
+          .lintText(formatted, { filePath })
+          .then(function onfulfilled(result) {
+            if (result.length > 0 && result[0].output) {
+              return result[0].output
+            }
 
-    return Buffer.from(formatted, 'utf-8')
-  })
+            return formatted
+          })
+      }
+
+      return formatted
+    })
+    .then(async function onfulfilled(formatted) {
+      return Buffer.from(formatted, 'utf-8')
+    })
 }
 
 function writeFile(path: string, buffer: Buffer): Promise<void> {
   return isFileEqualBuffer(path, buffer).then(function isEqual(isEqual) {
     return !isEqual
-      ? new Promise(function executor(resolve, reject) {
-          fs.writeFile(path, buffer, { flag: 'w' }, function result(err) {
+      ? new Promise<void>(function executor(resolve, reject) {
+          fs.writeFile(path, buffer, { flag: 'w' }, function callback(err) {
             err ? reject(err) : resolve()
           })
         })
@@ -172,20 +185,24 @@ function writeFile(path: string, buffer: Buffer): Promise<void> {
   })
 }
 
-async function typedCss(
+function typedCss(
   cssCode: string,
   document: vscode.TextDocument,
   force: boolean
 ): Promise<void> {
   const outputPath = document.uri.fsPath + '.d.ts'
 
-  const typedCode = await renderTypedFile(cssCode, outputPath)
+  return renderTypedFile(cssCode, outputPath)
+    .then(function onfulfilled(typedCode) {
+      return writeFile(outputPath, typedCode)
+    })
+    .then(function onfulfilled() {
+      if (force) {
+        vscode.window.showInformationMessage('Write typed to: ' + outputPath)
+      }
 
-  await writeFile(outputPath, typedCode)
-
-  if (force) {
-    vscode.window.showInformationMessage('Write typed to: ' + outputPath)
-  }
+      return undefined
+    })
 }
 
 function getExtFromPath(fileName: string): string {
@@ -198,7 +215,11 @@ function getExtFromPath(fileName: string): string {
   return fileName.slice(pos + 1)
 }
 
-async function getCssContent(extname: string, source: string, root: string): Promise<string> {
+async function getCssContent(
+  extname: string,
+  source: string,
+  root: string
+): Promise<string> {
   switch (extname) {
     case 'css':
       return source
@@ -217,7 +238,7 @@ async function getCssContent(extname: string, source: string, root: string): Pro
   }
 }
 
-const supportCss = ['css', 'less', 'scss', 'styl']
+const supportCss: readonly string[] = ['css', 'less', 'scss', 'styl'] as const
 
 const TYPE_REGEX = /[\s//*]*@type/
 
@@ -254,13 +275,17 @@ async function processDocument(
       return
     }
 
-    const cssCode = await getCssContent(extname, content, path.dirname(document.fileName))
+    const cssCode = await getCssContent(
+      extname,
+      content,
+      path.dirname(document.fileName)
+    )
 
     if (cssCode) {
       await typedCss(cssCode, document, force)
     }
-  } catch (e) {
-    vscode.window.showWarningMessage(e.toString())
+  } catch (err) {
+    vscode.window.showWarningMessage(err.toString())
   }
 }
 
@@ -278,6 +303,7 @@ export function activate(context: vscode.ExtensionContext): void {
     function command() {
       if (vscode.window.activeTextEditor !== undefined) {
         const document = vscode.window.activeTextEditor.document
+
         processDocument(document, true)
       }
     }
@@ -291,6 +317,7 @@ export function deactivate(): void {
   eslintSearch = false
   eslintEngine = null
   dtsCreator = null
+  stylus = null
   less = null
   sass = null
 }
