@@ -2,7 +2,7 @@
 
 ![logo](./logo.png)
 
-Creates .d.ts files from css-modules .css/.less/.scss/.styl files
+Creates `.d.ts` files from css-modules `.css`/`.less`/`.scss`/`.sass`/`.styl` files
 
 ## Install
 
@@ -15,7 +15,7 @@ npm install typed-css-modules
 # if you need less
 npm install less
 
-# if you need scss
+# if you need scss/sass
 npm install sass
 
 # if you need stylus
@@ -40,7 +40,7 @@ or
 /* @type */
 ```
 
-ahead of your `.css/.less/.scss/.styl` file, and save, you will get a `d.ts` file in same directory.
+ahead of your `.css`/`.less`/`.scss`/`.sass`/`.styl` file, and save, you will get a `d.ts` file in same directory.
 
 ## preview
 
