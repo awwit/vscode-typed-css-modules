@@ -68,13 +68,21 @@ function renderLess(content: string): Promise<string> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sass: any = null
 
-function renderScss(content: string): string {
+function renderScss(
+  content: string,
+  indentedSyntax: boolean,
+  root: string
+): string {
   if (sass === null) {
-    sass = requireg('node-sass')
+    sass = requireg('sass')
   }
 
-  // @see https://github.com/sass/dart-sass#javascript-api
-  return sass.renderSync(content)
+  /** @see https://github.com/sass/dart-sass#javascript-api */
+  return sass.renderSync({
+    data: content,
+    indentedSyntax,
+    includePaths: [root],
+  }).css
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -228,7 +236,8 @@ async function getCssContent(
       return renderLess(source)
 
     case 'scss':
-      return renderScss(source)
+    case 'sass':
+      return renderScss(source, extname === 'sass', root)
 
     case 'styl':
       return renderStylus(source, root)
@@ -238,7 +247,13 @@ async function getCssContent(
   }
 }
 
-const supportCss: readonly string[] = ['css', 'less', 'scss', 'styl'] as const
+const supportCss: readonly string[] = [
+  'css',
+  'less',
+  'scss',
+  'sass',
+  'styl',
+] as const
 
 const TYPE_REGEX = /[\s//*]*@type/
 
@@ -247,7 +262,7 @@ async function processDocument(
   force = false
 ): Promise<void> {
   try {
-    const extname = getExtFromPath(document.fileName)
+    const extname = getExtFromPath(document.fileName).toLowerCase()
 
     if (extname === '') {
       return
@@ -256,7 +271,7 @@ async function processDocument(
     if (!supportCss.includes(extname)) {
       if (force) {
         vscode.window.showInformationMessage(
-          'Typed CSS Modules only support .less/.css/.scss/.styl'
+          'Typed CSS Modules only support .less/.css/.scss/.sass/.styl'
         )
       }
 

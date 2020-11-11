@@ -8,7 +8,8 @@
       "ES2018"
     ],
     "strict": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "skipLibCheck": true
   },
   "exclude": [
     "node_modules",

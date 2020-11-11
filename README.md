@@ -16,7 +16,7 @@ npm install typed-css-modules
 npm install less
 
 # if you need scss
-npm install node-sass
+npm install sass
 
 # if you need stylus
 npm install stylus

@@ -23,6 +23,8 @@ module.exports = {
     mocha: true,
   },
   rules: {
+    'no-undef': 'off',
+    'no-redeclare': 'off',
     'node/no-missing-import': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
     'no-empty': ['error', { allowEmptyCatch: true }],

@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 
 function readFile(path: string): Promise<Buffer> {
   return new Promise<Buffer>(function executor(resolve, reject) {
-    fs.readFile(path + '.d.ts', function callback(err, data) {
+    fs.readFile(path, function callback(err, data) {
       err ? reject(err) : resolve(data)
     })
   })
@@ -38,11 +38,11 @@ suite('Typed CSS Modules', () => {
 export = styles
 `)
 
-  const root = path.resolve(__dirname, '../../../')
+  if (vscode.workspace.workspaceFolders === undefined) {
+    throw new Error('VSCode Workspace not open')
+  }
 
-  vscode.workspace.updateWorkspaceFolders(0, null, {
-    uri: vscode.Uri.file(root),
-  })
+  const root = vscode.workspace.workspaceFolders[0].uri.fsPath
 
   function runTestOnFile(filePath: string): Thenable<unknown> {
     const target = path.resolve(root, filePath)
@@ -59,6 +59,11 @@ export = styles
         return vscode.commands.executeCommand('workbench.action.files.save')
       })
       .then(() => {
+        return new Promise((resolve) => {
+          setTimeout(resolve, 1000)
+        })
+      })
+      .then(() => {
         return readFile(generated)
       })
       .then((data) => {
@@ -67,20 +72,23 @@ export = styles
   }
 
   test('css', () => {
-    runTestOnFile('fixtures/style.css')
+    return runTestOnFile('fixtures/style.css')
   })
 
-  test('less', () => {
-    runTestOnFile('fixtures/style.less')
+  test('less', async function () {
+    return runTestOnFile('fixtures/style.less')
   })
 
-  // Skip due to error with node-sass binary in Electron
-  test.skip('sass', () => {
-    runTestOnFile('fixtures/style.scss')
+  test('sass', () => {
+    return runTestOnFile('fixtures/style.sass')
   })
 
-  test('stylus', () => {
-    runTestOnFile('fixtures/style.styl')
+  test('scss', () => {
+    return runTestOnFile('fixtures/style.scss')
+  })
+
+  test('stylus', async () => {
+    return runTestOnFile('fixtures/style.styl')
   })
 }).afterAll(() => {
   return Promise.all(files.map((file) => removeFile(file)))

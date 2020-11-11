@@ -17,7 +17,7 @@ export function run(): Promise<void> {
   return new Promise(function executor(resolve, reject) {
     glob('**/**.test.js', { cwd: testsRoot }, function callback(
       err: NodeJS.ErrnoException | null,
-      files: string[]
+      files: readonly string[]
     ) {
       if (err) {
         return reject(err)
