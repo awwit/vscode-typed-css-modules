@@ -15,10 +15,16 @@ function getGlobalNodeModules(): string {
     vscode.workspace.getConfiguration('npm').get<string>('packageManager') ===
     'yarn'
 
-  return childProcess
+  let modulesPath = childProcess
     .execSync(isYarn ? 'yarn global dir' : 'npm root -g')
     .toString()
     .trim()
+
+  if (isYarn) {
+    modulesPath = path.join(modulesPath, 'node_modules')
+  }
+
+  return modulesPath
 }
 
 function requireg<T>(packageName: string): T
