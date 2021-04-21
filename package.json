@@ -33,11 +33,6 @@
       }
     ]
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn test"
-    }
-  },
   "scripts": {
     "vscode:prepublish": "yarn compile",
     "pub": "vsce publish",
@@ -47,36 +42,37 @@
     "tc": "tsc --noEmit",
     "watch": "tsc -watch",
     "pretest": "yarn compile",
-    "test": "node ./dist/test/runTests.js"
+    "test": "node ./dist/test/runTests.js",
+    "prepare": "husky install"
   },
   "dependencies": {
     "is-file-equal-buffer": "1.0.4"
   },
   "devDependencies": {
-    "@types/eslint": "7.2.6",
+    "@types/eslint": "7.2.10",
     "@types/glob": "7.1.3",
-    "@types/mocha": "8.2.0",
-    "@types/node": "14.14.14",
-    "@types/vscode": "1.32.0",
-    "@typescript-eslint/eslint-plugin": "4.10.0",
-    "@typescript-eslint/parser": "4.10.0",
-    "eslint": "7.15.0",
-    "eslint-config-prettier": "7.0.0",
+    "@types/mocha": "8.2.2",
+    "@types/node": "14.14.41",
+    "@types/vscode": "1.55.0",
+    "@typescript-eslint/eslint-plugin": "4.22.0",
+    "@typescript-eslint/parser": "4.22.0",
+    "eslint": "7.24.0",
+    "eslint-config-prettier": "8.2.0",
     "eslint-config-standard": "16.0.2",
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-prettier": "3.3.0",
-    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-prettier": "3.4.0",
+    "eslint-plugin-promise": "5.1.0",
     "eslint-plugin-standard": "5.0.0",
-    "husky": "4.3.6",
-    "less": "3.13.0",
+    "husky": "6.0.0",
+    "less": "4.1.1",
     "prettier": "2.2.1",
     "rimraf": "3.0.2",
-    "sass": "1.30.0",
+    "sass": "1.32.11",
     "stylus": "0.54.8",
-    "typed-css-modules": "0.6.4",
-    "typescript": "4.1.3",
+    "typed-css-modules": "0.6.7",
+    "typescript": "4.2.4",
     "vscode": "1.1.37",
-    "vscode-test": "1.4.1"
+    "vscode-test": "1.5.2"
   }
 }
