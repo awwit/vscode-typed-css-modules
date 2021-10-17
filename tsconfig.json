@@ -1,18 +1,20 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2018",
+    "target": "es2019",
     "rootDir": "src",
     "outDir": "dist",
     "lib": [
-      "ES2018"
+      "ES2019"
     ],
     "strict": true,
+    "alwaysStrict": true,
     "noUnusedLocals": true,
     "skipLibCheck": true
   },
   "exclude": [
     "node_modules",
-    ".vscode-test"
+    ".vscode-test",
+    "dist"
   ]
 }

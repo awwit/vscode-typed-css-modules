@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as path from 'path'
-// eslint-disable-next-line node/no-unpublished-import
 import * as vscode from 'vscode'
 
 function getWorkspaceFolders(): string[] {

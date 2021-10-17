@@ -4,8 +4,6 @@ fixtures/**
 dist/test/**
 src/**
 .gitignore
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/tslint.json
+tsconfig.json
 **/*.map
 **/*.ts

@@ -1,4 +1,3 @@
-// eslint-disable-next-line node/no-unpublished-import
 import * as vscode from 'vscode'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -27,10 +26,10 @@ function getGlobalNodeModules(): string {
   return modulesPath
 }
 
-function requireg<T>(packageName: string): T
-function requireg<T>(packageName: string, required: false): T | null
+function requireGlobal<T>(packageName: string): T
+function requireGlobal<T>(packageName: string, required: false): T | null
 
-function requireg<T>(packageName: string, required = true): T | null {
+function requireGlobal<T>(packageName: string, required = true): T | null {
   let packageDir = resolveLocal(packageName)
 
   if (!packageDir) {
@@ -56,12 +55,11 @@ interface LessRenderOutput {
   css: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let less: any = null
+let less: typeof import('less') | null = null
 
 function renderLess(content: string): Promise<string> {
   if (less === null) {
-    less = requireg('less')
+    less = requireGlobal<typeof import('less')>('less')
   }
 
   return less
@@ -71,8 +69,7 @@ function renderLess(content: string): Promise<string> {
     })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sass: any = null
+let sass: typeof import('sass') | null = null
 
 function renderScss(
   content: string,
@@ -80,35 +77,48 @@ function renderScss(
   root: string
 ): string {
   if (sass === null) {
-    sass = requireg('sass')
+    sass = requireGlobal<typeof import('sass')>('sass')
   }
 
   /** @see https://github.com/sass/dart-sass#javascript-api */
-  return sass.renderSync({
-    data: content,
-    indentedSyntax,
-    includePaths: [root],
-  }).css
+  return sass
+    .renderSync({
+      data: content,
+      indentedSyntax,
+      includePaths: [root],
+    })
+    .css.toString('utf8')
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let stylus: any = null
+let stylus: typeof import('stylus') | null = null
 
 function renderStylus(content: string, root: string): Promise<string> {
   if (stylus === null) {
-    stylus = requireg('stylus')
+    stylus = requireGlobal<typeof import('stylus')>('stylus')
   }
 
-  return new Promise<string>(function executor(resolve, reject) {
-    stylus(content)
+  return new Promise<string>(function executor(resolve, reject): void {
+    stylus?.(content)
       .set('paths', [root]) // This is needed for "@require" paths to be resolved.
-      .render(function callback(err: Error, css: string) {
+      .render(function callback(err: Error, css: string): void {
         err ? reject(err) : resolve(css)
       })
   })
 }
 
+function isEslintEnable(): boolean {
+  return (
+    vscode.workspace
+      .getConfiguration('typed-css-modules')
+      .get<boolean>('eslint.enable') ?? true
+  )
+}
+
 type DtsCreator = import('typed-css-modules').default
+
+interface DtsCreatorConstructor {
+  new (): DtsCreator
+}
 
 let dtsCreator: DtsCreator | null = null
 
@@ -123,22 +133,21 @@ let eslintEngine: import('eslint').ESLint | null = null
 
 function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
   if (dtsCreator === null) {
-    const DtsCreator = requireg<typeof import('typed-css-modules')>(
-      'typed-css-modules'
-    )
+    const DtsCreator =
+      requireGlobal<typeof import('typed-css-modules')>('typed-css-modules')
 
-    const Factory: {
-      new (): DtsCreator
-    } = Object.prototype.hasOwnProperty.call(DtsCreator, 'default')
+    const Factory: DtsCreatorConstructor = Object.prototype.hasOwnProperty.call(
+      DtsCreator,
+      'default'
+    )
       ? DtsCreator.default
-      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (DtsCreator as any)
+      : (DtsCreator as unknown as DtsCreatorConstructor)
 
     dtsCreator = new Factory()
   }
 
-  if (!eslintSearch && eslintEngine === null) {
-    const eslint = requireg<Eslint>('eslint', false)
+  if (isEslintEnable() && !eslintSearch && eslintEngine === null) {
+    const eslint = requireGlobal<Eslint>('eslint', false)
 
     eslintSearch = true
 
@@ -160,7 +169,9 @@ function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
           overrideConfigFile: configFile,
           fix: true,
         })
-      } catch {}
+      } catch (err) {
+        // noop
+      }
     }
   }
 
@@ -182,19 +193,15 @@ function renderTypedFile(css: string, filePath: string): Promise<Buffer> {
 
       return formatted
     })
-    .then(async function onfulfilled(formatted) {
-      return Buffer.from(formatted, 'utf-8')
+    .then(function onfulfilled(formatted) {
+      return Buffer.from(formatted, 'utf8')
     })
 }
 
 function writeFile(path: string, buffer: Buffer): Promise<void> {
   return isFileEqualBuffer(path, buffer).then(function isEqual(isEqual) {
     return !isEqual
-      ? new Promise<void>(function executor(resolve, reject) {
-          fs.writeFile(path, buffer, { flag: 'w' }, function callback(err) {
-            err ? reject(err) : resolve()
-          })
-        })
+      ? fs.promises.writeFile(path, buffer, { flag: 'w' })
       : undefined
   })
 }
@@ -306,7 +313,7 @@ async function processDocument(
       await typedCss(cssCode, document, force)
     }
   } catch (err) {
-    vscode.window.showWarningMessage(err.toString())
+    vscode.window.showWarningMessage(`${err}`)
   }
 }
 

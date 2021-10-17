@@ -1,19 +1,10 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as assert from 'assert'
-// eslint-disable-next-line node/no-unpublished-import
 import * as vscode from 'vscode'
 
-function readFile(path: string): Promise<Buffer> {
-  return new Promise<Buffer>(function executor(resolve, reject) {
-    fs.readFile(path, function callback(err, data) {
-      err ? reject(err) : resolve(data)
-    })
-  })
-}
-
 function removeFile(path: string): Promise<void> {
-  return new Promise(function executor(resolve, reject) {
+  return new Promise<void>(function executor(resolve, reject): void {
     fs.unlink(path, function callback(err) {
       if (err !== null && err.code !== 'ENOENT') {
         return reject(err)
@@ -64,7 +55,7 @@ export = styles
         })
       })
       .then(() => {
-        return readFile(generated)
+        return fs.promises.readFile(generated)
       })
       .then((data) => {
         return assert.ok(data.equals(snapshot))

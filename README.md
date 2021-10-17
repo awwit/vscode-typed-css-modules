@@ -2,7 +2,7 @@
 
 ![logo](./logo.png)
 
-Creates `.d.ts` files from css-modules `.css`/`.less`/`.scss`/`.sass`/`.styl` files
+Creates `.d.ts` files from css-modules `.css`/`.less`/`.scss`/`.sass`/`.styl` files.
 
 ## Install
 
@@ -26,11 +26,15 @@ Modules can be installed globally. `yarn` is supported.
 
 To switch the package manager (`npm` or `yarn`), you need to change the settings `npm.packageManager` of the built-in module `vscode.npm`.
 
+## Configuring
+
+By default, the option to automatically format `.d.ts` files using eslint is enabled. You can disable this feature through the setting `"typed-css-modules.eslint.enable": false`.
+
 ## Usage
 
 put
 
-```js
+```scss
 // @type
 ```
 

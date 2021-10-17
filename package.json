@@ -1,7 +1,7 @@
 {
   "name": "typed-css-modules-plugin",
   "icon": "logo.png",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "license": "MIT",
   "displayName": "CSS Module Typed",
   "description": "Creates .d.ts files from css-modules .css/.less/.scss/.sass/.styl files",
@@ -12,14 +12,19 @@
   ],
   "publisher": "awwit",
   "engines": {
-    "vscode": ">=1.32.0"
+    "vscode": ">=1.40.0",
+    "node": ">=12.x"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
     "onCommand:extension.cssModuleTyped",
-    "*"
+    "onLanguage:css",
+    "onLanguage:less",
+    "onLanguage:scss",
+    "onLanguage:sass",
+    "onLanguage:stylus"
   ],
   "repository": {
     "url": "https://github.com/awwit/vscode-typed-css-modules"
@@ -29,9 +34,20 @@
     "commands": [
       {
         "command": "extension.cssModuleTyped",
-        "title": "CSS Module Typed: Generate .d.ts For CSS Module"
+        "title": "CSS Module Typed: Generate .d.ts for CSS Module"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CSS Module Typed",
+      "properties": {
+        "typed-css-modules.eslint.enable": {
+          "description": "Enable automatic formatting of generated files (.d.ts) using eslint",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn compile",
@@ -49,30 +65,36 @@
     "is-file-equal-buffer": "1.0.4"
   },
   "devDependencies": {
-    "@types/eslint": "7.2.10",
-    "@types/glob": "7.1.3",
-    "@types/mocha": "8.2.2",
-    "@types/node": "14.14.41",
-    "@types/vscode": "1.55.0",
-    "@typescript-eslint/eslint-plugin": "4.22.0",
-    "@typescript-eslint/parser": "4.22.0",
-    "eslint": "7.24.0",
-    "eslint-config-prettier": "8.2.0",
-    "eslint-config-standard": "16.0.2",
-    "eslint-plugin-import": "2.22.1",
+    "@types/eslint": "7.28.1",
+    "@types/glob": "7.1.4",
+    "@types/less": "3.0.3",
+    "@types/mocha": "9.0.0",
+    "@types/node": "16.11.1",
+    "@types/sass": "1.16.1",
+    "@types/stylus": "0.48.36",
+    "@types/vscode": "^1.40.0",
+    "@typescript-eslint/eslint-plugin": "5.0.0",
+    "@typescript-eslint/parser": "5.0.0",
+    "eslint": "8.0.1",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-config-standard": "16.0.3",
+    "eslint-plugin-import": "2.25.2",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-prettier": "3.4.0",
+    "eslint-plugin-prettier": "4.0.0",
     "eslint-plugin-promise": "5.1.0",
     "eslint-plugin-standard": "5.0.0",
-    "husky": "6.0.0",
-    "less": "4.1.1",
-    "prettier": "2.2.1",
+    "husky": "7.0.2",
+    "less": "4.1.2",
+    "mocha": "9.1.3",
+    "prettier": "2.4.1",
     "rimraf": "3.0.2",
-    "sass": "1.32.11",
-    "stylus": "0.54.8",
-    "typed-css-modules": "0.6.7",
-    "typescript": "4.2.4",
-    "vscode": "1.1.37",
-    "vscode-test": "1.5.2"
+    "sass": "1.43.2",
+    "stylus": "0.55.0",
+    "typed-css-modules": "0.7.0",
+    "typescript": "4.4.4",
+    "vscode-test": "1.6.1"
+  },
+  "peerDependencies": {
+    "vscode": "^1.40.1"
   }
 }
